@@ -3,7 +3,7 @@
 module Interpolacja
 
 
-export ilorazyRoznicowe
+export ilorazyRoznicowe,warNewton
 
 function ilorazyRoznicowe(x::Vector{Float64}, f::Vector{Float64})
 
@@ -15,8 +15,17 @@ function ilorazyRoznicowe(x::Vector{Float64}, f::Vector{Float64})
         end
     end
 
-    
 return fx
+end
+
+function warNewton(x::Vector{Float64}, fx::Vector{Float64}, t::Float64)
+    
+    len=length(x)
+    nt=fx[len]
+    for i in (len)-1:-1:1
+        nt=nt*(t-x[i])+fx[i] 
+    end
+    return nt
 end
 end
 
