@@ -3,7 +3,7 @@
 module Interpolacja
 
 
-export ilorazyRoznicowe,warNewton
+export ilorazyRoznicowe,warNewton,naturalna
 
 function ilorazyRoznicowe(x::Vector{Float64}, f::Vector{Float64})
 
@@ -27,5 +27,18 @@ function warNewton(x::Vector{Float64}, fx::Vector{Float64}, t::Float64)
     end
     return nt
 end
+
+function naturalna(x::Vector{Float64}, fx::Vector{Float64})
+    len = length(fx)  
+    a=copy(fx)
+
+    for i in (len-1):-1:1
+        a[i]=fx[i]-a[i+1]*x[i]
+        for j in (i+1):len-1
+            a[j] = a[j] - a[j+1]*x[i]
+        end
+    end   
+    return a  # Zwróć współczynniki postaci naturalnej
 end
 
+end
