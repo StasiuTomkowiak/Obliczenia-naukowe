@@ -1,0 +1,341 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{polski}
+\usepackage[letterpaper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{algpseudocode}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+\title{Obliczenia naukowe lista 3}
+\author{Stanisław Tomkowiak}
+
+\begin{document}
+\maketitle
+
+
+\section*{Zadanie 1}
+\subsection*{Opis zadania}
+Napisać funkcję rozwiązującą równanie f (x) = 0 metodą bisekcji.
+
+\texttt{function mbisekcji(f, a::Float64, b::Float64, delta::Float64, epsilon::Float64)}
+\subsubsection*{Dane wejściowe}
+\begin{itemize}
+    \item \texttt{f} – funkcja f (x) zadana jako anonimowa funkcja (ang. anonymous function)
+    \item \texttt{a,b} – końce przedziału początkowego
+    \item \texttt{delta,epsilon} – dokładności obliczeń
+\end{itemize}
+\subsubsection*{Dane wyjściowe}
+\begin{itemize}
+    \item \texttt{(r,v,it,err)} – czwórka, gdzie
+    \begin{itemize}
+        \item \texttt{r} – przybliżenie pierwiastka równania f (x) = 0
+        \item \texttt{v} – wartość f (r)
+        \item \texttt{it} – liczba wykonanych iteracji
+        \item \texttt{err} – sygnalizacja błędu
+        \begin{itemize}
+            \item \texttt{0} - brak błędu
+            \item \texttt{1} - funkcja nie zmienia znaku w przedziale [a,b]
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+\subsection*{Opis metody}
+Aby metoda bisekcji była skuteczna do wyznaczenia zera funkcji w zadanym przedziale, muszą być spełnione dwa warunki: 
+\begin{itemize}
+    \item funkcja \texttt{f(x)} musi być ciągła w tym przedziale
+    \item funkcja \texttt{f(x)} musi zmienić znak w zadanym przedziale to znaczy $f(a)*f(b)<0$. 
+\end{itemize}
+
+Pierwiastek obliczamy za pomocą iteracji. W każdej kolejnej iteracji wyznaczamy zero funkcji obliczając $r=\frac{a+b}{2}$. Jeżeli $|b-a|<\delta$ lub $|f(r)|<\epsilon$, to kończymy iterowanie i zwracamy wynik $r$.  W przypadku, gdy warunek nie jest spełniony, wybieramy przedział $[a,r]$ lub $[r,b]$ w zależności, w którym przedziale funkcja zmienia znak, i powtarzamy proces. W ten sposób zawężamy przedział do osiągnięcia odpowiedniej dokładności. 
+\subsection*{Pseudokod}
+\begin{algorithm}
+\caption{Metoda bisekcji (\texttt{mbisekcji})}
+\begin{algorithmic}[1]
+\Function{mbisekcji}{$f, a, b, \delta, \epsilon$}
+    \If{$b < a$}
+        \State Zamień $a$ i $b$
+    \EndIf
+    \State $u \gets f(a)$
+    \State $v \gets f(b)$
+    \If{$\text{sign}(u) = \text{sign}(v)$}
+        \State \Return $(0.0, 0.0, 0, 1)$
+    \EndIf
+    \State $k \gets 0$
+    \State $c \gets 0$
+    \State $w \gets 0$
+    \State $e \gets b - a$
+    \For{$k \gets 0$ \textbf{to} $10^{10}$}
+        \State $e \gets e / 2$
+        \State $c \gets a + e$
+        \State $w \gets f(c)$
+        \If{$|e| < \delta$ \textbf{or} $|w| < \epsilon$}
+            \State \Return $(c, w, k, 0)$
+        \EndIf
+        \If{$\text{sign}(w) \neq \text{sign}(u)$}
+            \State $b \gets c$
+            \State $v \gets w$
+        \Else
+            \State $a \gets c$
+            \State $u \gets w$
+        \EndIf
+    \EndFor
+    \State \Return $(c, w, k, 0)$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+\section*{Zadanie 2}
+\subsection*{Opis zadania}
+Napisać funkcję rozwiązującą równanie f (x) = 0 metodą Newtona.
+
+\texttt{function mstycznych(f,pf,x0::Float64, delta::Float64, epsilon::Float64, maxit::Int)}
+\subsubsection*{Dane wejściowe}
+    \begin{itemize}
+        \item \texttt{f, pf} – funkcją f (x) oraz pochodną f ′(x) zadane jako anonimowe funkcje
+        \item \texttt{x0} – przybliżenie początkowe
+        \item \texttt{delta,epsilon} – dokładności obliczeń
+        \item \texttt{maxit} – maksymalna dopuszczalna liczba iteracji
+    \end{itemize}
+\subsubsection*{Dane wyjściowe}
+    \begin{itemize}
+        \item \texttt{(r,v,it,err)} – czwórka, gdzie
+        \begin{itemize}
+            \item \texttt{r} – przybliżenie pierwiastka równania f (x) = 0
+            \item \texttt{v} – wartość f (r)
+            \item \texttt{it} – liczba wykonanych iteracji
+            \item \texttt{err} – sygnalizacja błędu
+                \begin{itemize}
+                    \item \texttt{0} - metoda zbieżna
+                    \item \texttt{1} - nie osiągnięto wymaganej dokładności w maxit iteracji
+                    \item \texttt{2} - pochodna bliska zeru
+                \end{itemize}
+        \end{itemize}
+    \end{itemize}
+\subsection*{Opis metody}
+Metoda Newtona (stycznych) posiada dodatkowy element wejściowy: pochodną funkcji $f(x)$. 
+W tym sposobie obliczenia zer funkcji zaczynamy od $x_0$ i konstruujemy w tym punkcie styczną do funkcji $f(x_0)$. Kolejnym przybliżeniem jest $x_1$, czyli x-owa współrzędna przecięcia stycznej z osią X. W ogólności $x_{n+1}=x_n-\frac{f(x_n)}{f'(x_n)}$. Iterujemy tym sposobem do czasu aż $|f(x_n)|<\epsilon$ lub $|x_n|-x_{n-1}<\delta$. Dodatkowy warunek \texttt{maxit} pojawia się, ponieważ metoda Newtona nie musi być zbieżna. Gdy wybierzemy $x_0$ zbyt daleko od faktycznego pierwiastka, możemy nie wyznaczyć prawidłowego pierwiastka. Z tego powodu ustawiamy maksymalną liczbę iteracji. 
+\subsection*{Pseudokod}
+\begin{algorithm}
+\caption{Metoda stycznych (\texttt{mstycznych})}
+\begin{algorithmic}[1]
+\Function{mstycznych}{$f, pf, x_0, \delta, \epsilon, \text{maxit}$}
+    \State $v \gets f(x_0)$
+    \If{$|v| < \epsilon$}
+        \State \Return $(x_0, v, 0, 0)$
+    \EndIf
+
+    \State $k \gets 0$
+    \State $x_1 \gets x_0$
+
+    \For{$k \gets 1$ \textbf{to} $\text{maxit}$}
+        \If{$|pf(x_0)| < \epsilon$}
+            \State \Return $(0.0, 0.0, 0, 2)$
+        \EndIf
+        \State $x_1 \gets x_0 - \frac{v}{pf(x_0)}$
+        \State $v \gets f(x_1)$
+        \If{$|x_1 - x_0| < \delta$ \textbf{or} $|v| < \epsilon$}
+            \State \Return $(x_1, v, k, 0)$
+        \EndIf
+        \State $x_0 \gets x_1$
+    \EndFor
+
+    \State \Return $(x_1, v, k, 1)$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+\section*{Zadanie 3}
+\subsection*{Opis zadania}
+Napisać funkcję rozwiązującą równanie f (x) = 0 metodą siecznych.
+
+\texttt{function msiecznych(f, x0::Float64, x1::Float64, delta::Float64, epsilon::Float64, maxit::Int)}
+\subsubsection*{Dane wejściowe}
+    \begin{itemize}
+        \item \texttt{f, pf} – funkcją f (x) oraz pochodną f ′(x) zadane jako anonimowe funkcje
+        \item \texttt{x0,x1} – przybliżenia początkowe
+        \item \texttt{delta,epsilon} – dokładności obliczeń
+        \item \texttt{maxit} – maksymalna dopuszczalna liczba iteracji
+    \end{itemize}
+\subsubsection*{Dane wyjściowe}
+\begin{itemize}
+    \item \texttt{(r,v,it,err)} – czwórka, gdzie
+    \begin{itemize}
+        \item \texttt{r} – przybliżenie pierwiastka równania f (x) = 0,
+        \item \texttt{v} – wartość f (r)
+        \item \texttt{it} – liczba wykonanych iteracji
+        \item \texttt{err} – sygnalizacja błędu
+        \begin{itemize}
+            \item \texttt{0} - metoda zbieżna
+            \item \texttt{1} - nie osiągnięto wymaganej dokładności w maxit iteracji
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+\subsection*{Opis metody}
+Metoda siecznych zaczyna się od wybrania dwóch przybliżeń $x_0$ i $x_1$. $x_2$ budujemy za pomocą siecznej przecinającej funkcję $f(x)$ w punktach $(x_0 , f (x_0 ))$ i $(x_1 , f (x_1 ))$, z osią X. W ogólności:
+\[
+x_{n+1}=x_n-\frac{x_n-x_{n-1}}{f(x_n)-f(x_{n-1}}f(x_n).
+\]
+Iterujemy tym sposobem do czasu, aż $|f(x_n)|<\epsilon$ lub $|x_n|-x_{n-1}<\delta$. Dodatkowy warunek \texttt{maxit} pojawia się ponieważ metoda siecznych nie musi być zbieżna. Z tego powodu ustawiamy maksymalną liczbę iteracji. 
+\subsection*{Pseudokod}
+\begin{algorithm}
+\caption{Metoda siecznych (\texttt{msiecznych})}
+\begin{algorithmic}[1]
+\Function{msiecznych}{$f, x_0, x_1, \delta, \epsilon, \text{maxit}$}
+    \State $f_a \gets f(x_0)$
+    \State $f_b \gets f(x_1)$
+    \State $k \gets 0$
+    \For{$k \gets 1$ \textbf{to} $\text{maxit}$}
+        \If{$|f_a| > |f_b|$}
+            \State Zamień $x_0$ z $x_1$
+            \State Zamień $f_a$ z $f_b$
+        \EndIf
+        \State $s \gets \frac{x_1 - x_0}{f_b - f_a}$ 
+        \State $x_1 \gets x_0$
+        \State $f_b \gets f_a$
+        \State $x_0 \gets x_0 - f_a \cdot s$
+        \State $f_a \gets f(x_0)$
+        \If{$|x_1 - x_0| < \delta$ \textbf{or} $|f_a| < \epsilon$}
+            \State \Return $(x_0, f_a, k, 0)$ 
+        \EndIf
+    \EndFor
+    \State \Return $(x_0, f_a, k, 1)$ 
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+\section*{Zadanie 4}
+\subsection*{Opis zadania}
+W celu wyznaczenia pierwiastka równania $\sin x - \left(\frac{1}{2} x\right)^2 = 0$ zastosować wcześniej zaprogramowane metody:
+    \begin{itemize}
+        \item bisekcji z przedziałem początkowym $[1.5;2]$ i $\delta = \frac{1}{2} 10^{-5}$, $\epsilon = \frac{1}{2} 10^{-5}$
+       \item Newtona z przybliżeniem początkowym $x_0 = 1.5$ i $\delta = \frac{1}{2} 10^{-5}$, $\epsilon = \frac{1}{2} 10^{-5}$
+       \item siecznych z przybliżeniami początkowym $x0 = 1$, $x1 = 2$ i $\delta = \frac{1}{2} 10^{-5}$, $\epsilon = \frac{1}{2} 10^{-5}$
+    \end{itemize}
+\subsection*{Rozwiązanie}
+Uruchamiamy odpowiednie funkcje z modułu \texttt{ZeroFinding} z zadanymi parametrami.
+\subsection*{Wyniki i interpretacja}
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Metoda} & \textbf{Przybliżenie ($x$)} & \textbf{Wartość funkcji ($f(x)$)} & \textbf{Iteracje ($k$)} \\ \hline
+Bisekcji       & 1.9337539672851562          & $-2.702768 \times 10^{-7}$        & 16                                          \\ \hline
+Stycznych        & 1.933753779789742           & $-2.242331 \times 10^{-8}$        & 4                                              \\ \hline
+Siecznych        & 1.933753644474301           & $1.564525 \times 10^{-7}$         & 4                                             \\ \hline
+\end{tabular}
+\caption{Porównanie wyników metod Bisekcji, Stycznych i Siecznych}
+\label{tab:metody}
+\end{table}
+Wszystkie metody poprawnie zwróciły wynik funkcji $f(x)=\sin x - \left(\frac{1}{2} x\right)^2$ z podaną dokładnością. Możemy zauważyć, że metody stycznych i siecznych są zauważalnie szybsze niż bisekcji. Dodatkowo wyniki udowadniają współczynnik zbieżności $\alpha$. Dla metody bisekcji jest on równy $\alpha=1$, dla stycznych $\alpha=2$, a dla siecznych $\alpha=\frac{1+\sqrt{5}}{2}\approx1.618...$ 
+\subsection*{Wnioski}
+Dzięki współczynnikowi $\alpha>1$ metody siecznych i Newtona są zauważalnie szybsze od metody bisekcji. Jednak ich wadą jest to, że potrzebujemy do nich dodatkowych danych oraz nie zawsze są zbieżne. Dodatkowym minusem metody Newtona jest konieczność liczenia $f'(x)$. 
+\section*{Zadanie 5}
+\subsection*{Opis zadania}
+Metodą bisekcji znaleźć wartości zmiennej $x$, dla której przecinają się wykresy funkcji $y = 3x$ i $y = e^x$. Wymagana dokładności obliczeń: $\delta = 10^{-4}$, $\epsilon= 10^{-4}$.
+\subsection*{Rozwiązanie zadania}
+Zadanie polega na znalezieniu punktu przecięcia dwóch funkcji, zatem jako pierwsze możemy zapisać: $3x=e^x$. Po odpowiednim przekształceniu otrzymujemy $3x-e^x=0$, zatem funkcja, którą podstawimy do metody bisekcji znajdowania zera, wygląda następująco $f(x)=3x-e^x$. Do naszej funkcji $f(x)$ używamy funkcji \texttt{mbisekcji} z modułu \texttt{ZeroFinding}  z parametrami podanymi w zadaniu. Po analizie podanych funkcji wynika, że przecięcie znajduje się pomiędzy $0$ i $1$ oraz $1$ i $2$. Uruchamiamy zatem funkcję dwa razy, z wartościami $a=0$ i $b=1$ oraz $a=1$ i $b=2$.  
+\subsection*{Wyniki }
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\textbf{Miejsce przecięcia} & \textbf{Przybliżenie ($x$)} & \textbf{Wartość funkcji ($f(x)$)} & \textbf{Iteracje ($k$)} & \textbf{Przedział} \\ \hline
+1        & 0.619140625                & $9.0663 \times 10^{-5}$          & 9                        & $[0,1]$                        \\ \hline
+2           & 1.5120849609375            & $7.6186 \times 10^{-5}$          & 13                       & $[1,2]$                        \\ \hline
+\end{tabular}
+\caption{Wyniki metody Bisekcji dla dwóch miejsc zerowych}
+\label{tab:bisekcja_miejsca}
+\end{table}
+\subsection*{Wnioski}
+Aby znaleźć prawidłowy punkt przecięcia dwóch funkcji metodą bisekcji, konieczna jest analiza ich przebiegu zmienności. 
+\section*{Zadanie 6}
+\subsection*{Opis zadania}
+Znaleźć miejsce zerowe funkcji $f_1(x) = e^{1-x} - 1$ oraz $f_2(x) = xe^{-x}$ za pomocą metod bisekcji, Newtona i siecznych. Wymagane dokładności obliczeń: $\delta = 10^{-5}$, $\epsilon=10^{-5}$.
+
+Sprawdzić co stanie, gdy w metodzie Newtona dla $f_1$ wybierzemy $x_0 \in (1, \infty]$ a dla $f_2$ wybierzemy $x_0 > 1$. Co się stanie jak wybierzemy $x_0 = 1$ dla $f_2$?
+
+\subsection*{Rozwiązanie zadania}
+Dla podanej funkcji $f_1$ analizujemy jak dobrać startowe wartości. Mamy:
+\begin{itemize}
+    \item Metoda bisekcji $a=0$, $b=3$
+    \item Metoda Newtona $x_0=0.5$
+    \item Metoda siecznych $x_0=0$, $x_1=2$ 
+\end{itemize}
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Metoda} & \textbf{Przybliżenie ($x$)} & \textbf{Wartość funkcji ($f(x)$)} & \textbf{Iteracje ($k$)} \\ \hline
+Bisekcja        & 0.99993896484375            & $6.1037 \times 10^{-5}$           & 14                                               \\ \hline
+Styczne         & 0.9999850223207645          & $1.4978 \times 10^{-5}$           & 3                                               \\ \hline
+Sieczne         & 1.0000017597132702          & $-1.7597 \times 10^{-6}$          & 6                                               \\ \hline
+\end{tabular}
+\caption{Porównanie wyników metod Bisekcji, Stycznych i Siecznych}
+\label{tab:porownanie_metod}
+\end{table}
+Dla podanej funkcji $f_2$ analizujemy jak dobrać startowe wartości. Mamy:
+\begin{itemize}
+    \item Metoda bisekcji $a=-0.5$, $b=1.0$
+    \item Metoda Newtona $x_0=0.5$
+    \item Metoda siecznych $x_0=-0.5$, $x_1=1.0$ 
+\end{itemize}
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Metoda} & \textbf{Przybliżenie ($x$)} & \textbf{Wartość funkcji ($f(x)$)} & \textbf{Iteracje ($k$)}  \\ \hline
+Bisekcja        & $-7.62939453125 \times 10^{-6}$  & $-7.629452739132958 \times 10^{-6}$ & 16 \\ \hline
+Styczne         & $-3.0642493416461764 \times 10^{-7}$ & $-3.0642502806087233 \times 10^{-7}$ & 5  \\ \hline
+Sieczne         & $7.367119728946578 \times 10^{-6}$  & $7.3670654546934 \times 10^{-6}$      & 10 \\ \hline
+\end{tabular}
+\caption{Porównanie wyników metod Bisekcji, Stycznych i Siecznych}
+\label{tab:porownanie_metod2}
+\end{table}
+Wyniki są poprawne zarówno dla $f_1(x)$ i $f_2(x)$. Zgadzają się z podaną dokładnością.
+
+Przeanalizujmy teraz drugą część zadania. Najpierw przedstawmy wyniki dla $x_0 \in (1,\infty)$:
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+ \textbf{Przybliżenie ($x$)} & \textbf{Wartość funkcji ($f(x)$)} & \textbf{Iteracje ($k$)} & \textbf{Kod zakończenia} & \textbf{wartość $x_0$} \\ \hline
+0.9999447477307815          & $5.5254 \times 10^{-5}$         & 3  & 0&1.5 \\ \hline
+  0.9999999710783241          & $2.8922 \times 10^{-8}$         & 9  & 0&3.0 \\ \hline
+ 0.9999996427095682          & $3.5729 \times 10^{-7}$         & 54 & 0&5.0 \\ \hline
+ -457.6416330443619          & $1.5330 \times 10^{199}$        & 0  & 1 & 7.5\\ \hline
+ NaN                         & NaN                             & 0  & 1 &10.0\\ \hline
+NaN                         & NaN                             & 0  & 1 &20.0
+\\ \hline
+\end{tabular}
+\caption{Wyniki metody stycznych dla różnych przypadków $x_0$}
+\label{tab:metoda_stycznych}
+\end{table}
+
+
+Dla $x_1 \in (1,\infty)$ ilość iteracji w metodzie Newtona rośnie bardzo szybko. Wynika to z tego, że pochodna $f_1'(x) = -e^{1-x}$ bardzo szybko osiąga wartości bliskie $0$. Już dla $x_0=5.0$ ilość iteracji jest równa $54$, a dla $x_0=7.5$ kod zakończenia zwraca $1$.
+
+
+Przeanalizujmy teraz $f_2(x)$ dla $x_0 > 1$:
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+ \textbf{Przybliżenie ($x$)} & \textbf{Wartość funkcji ($f(x)$)} & \textbf{Iteracje ($k$)} & \textbf{Kod zakończenia} &\textbf{wartość $x_0$}\\ \hline
+ 14.787436802837927          & $5.5949 \times 10^{-6}$        & 10 & 0 & 1.5\\ \hline
+ 14.787436802837927          & $5.5949 \times 10^{-6}$        & 10 & 0 & 3.0\\ \hline
+ 15.19428398343915           & $3.8272 \times 10^{-6}$        & 9  & 0 & 5.0 \\ \hline
+ 14.172988816578348          & $9.9131 \times 10^{-6}$        & 6  & 0 &7.5\\ \hline
+ 14.636807965014             & $6.4382 \times 10^{-6}$        & 6  & 0 & 8.0 \\ \hline
+ 100.0                       & $3.7201 \times 10^{-42}$       & 0  & 0 & 100.0\\ \hline
+ 500.0                       & $3.5623 \times 10^{-215}$      & 0  & 0& 500.0  \\ \hline
+\end{tabular}
+\caption{Wyniki metody stycznych dla różnych przypadków $x_0$}
+\label{tab:metoda_stycznych2}
+\end{table}
+
+
+Dla $x_0 > 1$ algorytm zwraca błędny wynik równy około $14.7$. Wynika to z tego, że funkcja od wartości $x=1$, dąży w nieskończoności do $0$. Jedyne miejsce zerowe dla funkcji $f_2(x)$ jest równe $x=0$. Funkcja zwraca wartości $x \approx 14.7$ ponieważ dla tych wartości $x$ spełniony jest warunek $\epsilon<10^{-5}$.
+
+Ostatni przypadek dla funkcji $f_2(x)$ to przypadek $x_0=1$, zwraca on kod zakończenia $2$. Znaczy to, że algorytm kończy działanie od razu. Dzieje się tak, ponieważ dla wartości $x_0=1$ pochodna funkcji $f_2(x)$ jest równa $0$.
+\subsection*{Wnioski}
+Dla metod wyszukiwania zer funkcji należy najpierw przeprowadzić analizę przypadków. W przeciwnym razie możemy dobrać dane, aby metoda zwracała błędny wynik jako prawidłowy. 
+\end{document}
