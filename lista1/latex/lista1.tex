@@ -1,0 +1,339 @@
+\documentclass{article}
+
+\usepackage{polski}
+\usepackage[letterpaper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{algpseudocode}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+\title{Obliczenia naukowe lista 1}
+\author{Stanisław Tomkowiak}
+
+\begin{document}
+\maketitle
+
+
+
+\section*{Zadanie 1}
+\subsection*{Macheps}
+
+Epsilon maszynowy czyli właśnie macheps jest to najmniejsza liczba taka, żę $1+macheps >1 $. Dzięki temu epsilonowi określamy precyzję arytmetyki. Błąd zaokrąglenia liczby wynosi dokładnie $\frac{1}{2}$ macheps.
+
+Wyznaczenie wartości epsilonu maszynowego metodą iteracyjną polega na dodawaniu do liczby 1.0 w wybranej precyzji coraz mniejszych wartości, dopóki liczba jest większa od 1.0. Jako pierwszą liczbę ustalamy macheps=1.0 i w każdej iteracji dzielimy go przez 2. Pętla zatrzyma się na wartości macheps.
+
+
+\begin{algorithm}
+\caption{Obliczanie maszynowego epsilonu dla typu liczbowego \( T \):}
+\begin{algorithmic}[1]
+\Function{macheps}{T}
+    \State \( \text{macheps} \gets T(1.0) \) \Comment{Inicjalizujemy macheps jako 1.0 dla typu \( T \)}
+    \While{ \( T(1.0) + \frac{\text{macheps}}{T(2.0)} > T(1.0) \)}
+        \State \( \text{macheps} \gets \frac{\text{macheps}}{T(2.0)} \) \Comment{Dzielimy macheps przez 2, dopóki sumowanie go z T(1.0) jest większe od 1.0 }
+    \EndWhile
+    \State \Return \text{macheps} \Comment{Zwracamy obliczoną wartość macheps}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+Poniżej przedstawiam wyniki z dokładnością do trzech cyfr znaczących dla trzech różnych metod wyznaczenia epsilonu:
+\begin{center}
+  \begin{tabular}{|c|c|c|c|}
+    \hline
+            & Float16   & Float32    & Float64   \\ [0.5ex]
+    \hline
+    wyniki iteracyjne& 0.000977& $1.19 \cdot 10^{-7}$ & $2.22 \cdot 10^{-16}$ \\
+    \hline
+    wyniki uzyskane za pomocą funkcji eps() & 0.000977& $1.19 \cdot 10^{-7}$ & $2.22 \cdot 10^{-16}$ \\
+    \hline
+    wartości w float.h   & brak & $1.19 \cdot 10^{-7}$ & $2.22 \cdot 10^{-16}$ \\
+    \hline
+  \end{tabular}
+\end{center}
+
+Wyniki dla tych trzech metod są takie same. Znaczy to, że iteracyjny sposób wyznaczenia epsilonu maszynowego jest skuteczny.
+\subsection*{Eta}
+Eta jest to najmniejsza liczba większa od zera maszynowego. W zadaniu należało obliczyć iteracyjnie wartość liczby eta dla wszystkich typów zmiennopozycyjnych zgodnych ze standardem IEEE 754. Dodatkowo musieliśmy zbadać związek tej liczby z liczbą $MIN_{sub}$.
+
+Wyznaczenie tych wartości jest analogiczne do wyznaczania macheps. Dzielimy liczbę 1.0 przez 2 do czasu aż jest ona większa od 0.0. Poniżej przedstawiam pseudokod:
+
+
+\begin{algorithm}
+\caption{Obliczanie liczby eta dla typu liczbowego \( T \)}
+\begin{algorithmic}[1]
+\Function{eta}{T}
+    \State \( \text{eta} \gets T(1.0) \) \Comment{Inicjalizujemy eta jako 1.0 dla typu \( T \)}
+    \While{ \(\frac{\text{eta}}{T(2.0)} > T(0.0) \)}
+        \State \( \text{eta} \gets \frac{\text{eta}}{T(2.0)} \) \Comment{Dzielimy eta przez 2, dopóki jest większa od 0.0 }
+    \EndWhile
+    \State \Return \text{eta} \Comment{Zwracamy obliczoną wartość macheps}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+    Poniżej przedstawiam wyniki dwóch różnych metod wyznaczenia eta:
+\begin{center}
+  \begin{tabular}{|c|c|c|c|}
+    \hline
+       & Float16 & Float32 & Float64  \\ [0.5ex]
+    \hline
+    wyniki iteracyjne & 6.0e-8  & 1.0e-45 & 5.0e-324 \\
+    \hline
+    wyniki uzyskane za pomocą funkcji nextfloat(0.0) & 6.0e-8  & 1.0e-45 & 5.0e-324 \\
+    \hline
+  \end{tabular}
+\end{center}
+
+Wyniki dla tych dwóch metod są takie same. Znaczy to, że iteracyjny sposób wyznaczenia liczby eta jest skuteczny.
+
+Związek liczby eta z $MIN_{sub}$. $MIN_{sub}$ jest najmniejszą liczbą większą od 0.0 w formie nieznormalizowanej. Po obliczeniu liczby $MIN_{sub}$ dla badanych typów jest ona równa liczbie eta. Wyniki funkcji minfloat(Float32) i minfloat(Float64) prezentują się następująco:
+\begin{itemize}
+\item floatmin32: 1.1754944e-38
+\item floatmin64: 2.2250738585072014e-308
+\end{itemize}
+Są one zatem wiele większe od iteracyjnej próby, wartości te są najmniejszymi wartościami większymi od 0.0 znormalizowanymi.
+\subsection*{Max}
+Największa wartość jaką można otrzymać w standardzie IEEE 754. Otrzymuję ją za pomocą algorytmu w którym mnożymy liczbę previous float(1.0) razy 2 tak długo aż liczba jest różna od wartości infinity. Poniżej przedstawiam pseudokod:
+
+\begin{algorithm}
+\caption{Obliczanie maksymalnej wartości reprezentowalnej dla typu liczbowego \( T \)}
+\begin{algorithmic}[1]
+\Function{max}{T}
+    \State \( \text{max} \gets \text{prevfloat}(T(1.0)) \) \Comment{Inicjalizujemy max jako największą liczbę mniejszą niż 1.0 dla typu \( T \)}
+    \While{ \textbf{not} \(\text{isinf}(\text{max} \times T(2.0))\) }
+        \State \( \text{max} \gets \text{max} \times T(2.0) \) \Comment{Mnożymy max przez 2, dopóki nie osiągnie nieskończoności}
+    \EndWhile
+    \State \Return \text{max} \Comment{Zwracamy obliczoną maksymalną wartość}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+Poniżej przedstawiam wyniki badań:
+
+\begin{center}
+  \begin{tabular}{|c|c|c|c|}
+    \hline
+       & Float16           & Float32              & Float64               \\ [0.5ex]
+    \hline
+    wyniki iteracyjne  & $6.55 \cdot 10^4$ & $3.40 \cdot 10^{38}$ & $1.80 \cdot 10^{308}$ \\
+    \hline
+    wynikiuzyskane za pomocą funkcji floatmax() & $6.55 \cdot 10^4$ & $3.40 \cdot 10^{38}$ & $1.80 \cdot 10^{308}$ \\
+    \hline
+    wartości z raportu  & brak danych   & $3.40 \cdot 10^{38}$ & $1.80 \cdot 10^{308}$ \\
+    \hline
+  \end{tabular}
+\end{center}
+Wyniki są takie same. Znaczy to, że iteracyjna forma wyznaczenia maksymalnej wartości jest prawidłowa(zgadza się z danymi z raportu oraz wynikami funkcji floatmax).
+
+
+
+
+\section*{Zadanie 2}
+Wzór wymyślony przez Kahana: $3(\frac{4}{3}-1)-1$ po obliczeniu zwraca wyniki zgodne z machepsem danego typu co do znaku. Można uznać je za poprawne ponieważ w standardzie IEEE 754 pomnożenie przez -1 to jedynie negacja pierwszego bitu. Jednak aby uznać wzór kahana za w pełni poprawny należałoby zapisać go w formie:
+\[
+\left| 3 \left( \frac{4}{3} - 1 \right) - 1 \right|
+\]
+\section*{Zadanie 3}
+Sprawdzenie rozmieszczenia liczb w standardzie IEEE 754 arytmetyce Float64. Z powodów bardzo dużej liczby liczb sprawdzamy tylko mały wycinek tych liczb z przedziału. Dla zbadanych wartości wynika, że przedziale [1,2] liczby zmiennopozycyjne są rozmieszczone równomiernie. Krok tego przedziału jest równy $\delta = 2^{-52}$. Zatem każda liczba występująca w tym przedziale może być przedstawiona za pomocą wzoru $x=1+k\delta$ dla $k=1,2,...,2^{-52}-1$. Badając jednak inne przedstawione w zadaniu przedziału obserwujemy iż kroki są inne. Przedział [0.5,1] ma krok równy $\delta = 2^{-53}$. Przedział [2,4] ma krok równy $\delta = 2^{-51}$. 
+
+W badanym standardzie w reprezentacji bitowej obserwujemy,że przedziały $[2^k, 2^{k+1}]$  różnią się tylko mantysą. W każdym takim przedziale znajduje się $2^t$ równo rozmieszczonych liczb. Widzimy zatem, że im mniejsza cecha w danym przedziale tym bliższe sobie liczby jesteśmy w stanie zaobserwować.
+\section*{Zadanie 4}
+Najmniejsza liczba w arytmetyce Float64 w przedziale (1,2) taka, że $x*\frac{1}{x}\neq1$ to 1.000000057228997. Wyznaczyć ją można stosując metody poznane już wcześniej. Mianowicie zaczynając od następnej liczby po 1.0 wykonywać to działanie zwiększając liczbę o wartość macheps do czasu aż wartość iloczynu będzie różna od 1.0. Warto także sprawdzić jaki wynik otrzymamy po wykonaniu tego działania z tą liczbą. Jest ono równe: 0.9999999999999999. Wnioski z przeprowadzenia tego badania są takie, że ograniczenia w arytmetyce zmiennopozycyjnej mogą doprowadzać do błędów w wynikach przez co mogą zostać złamane pewne własności matematyczne.
+\section*{Zadanie 5}
+Zadanie polegało na obliczeniu iloczynu skalarnego dwóch podanych wektorów: 
+\[
+\begin{array}{r l}
+x &= [2.718281828, -3.141592654, 1.414213562, 0.5772156649, 0.3010299957] \\
+y &= [1486.2497, 878366.9879, -22.37492, 4773714.647, 0.000185049].
+\end{array}
+\]
+Uzyskać wynik mieliśmy na cztery różne sposoby dla arytmetyk Float32 i Float64. Poniżej przedstawiam wyniki tych eksperymentów:
+
+\begin{center}
+  \begin{tabular}{|c|c|c|}
+    \hline
+      & Float32    & Float64 \\ [0.5ex]
+    \hline
+    prawidłowa wartość  & -1.00657107000000\cdot 10^{-11}& -1.00657107000000\cdot 10^{-11}$ \\
+    \hline
+    "w przód"  & -0.4999443 & $1.0251881368296672 \cdot 10^{-10}$ \\
+    \hline
+    "w tył"    & -0.4543457 & $-1.5643308870494366 \cdot 10^{-10}$ \\
+    \hline
+    "malejąco" & -0.5       & 0.0 \\
+    \hline
+    "rosnąco"  & -0.5       & 0.0 \\
+    \hline
+  \end{tabular}
+\end{center}
+Żaden ze sposobów nie jest skuteczny. Szczególnie duże błędy pojawiają się w precyzji single. Wyniki przedstawione w tabeli nie pojawiły się bez powodu; tak duże błędy wynikają z tego, że wektory te są prawie prostopadłe do siebie. Powstają przez to duże błędy w obliczeniach. Dodatkowo, dzięki temu zadaniu widać, iż kolejność wykonywania działań w komputerze ma znaczenie. Na błędy wpływa nie tylko arytmetyka, ale także właśnie kolejność działań.
+\section*{Zadanie 6}
+Zadanie polegało na obliczeniu wartości funkcji:
+\[
+f(x) = \sqrt{x^2 + 1} - 1
+\]
+\[
+g(x) = \frac{x^2}{\sqrt{x^2 + 1} + 1}
+\]
+Dla różnych wartości argumentu \( x = 8^{-1}, 8^{-2}, 8^{-3}, \dots \). Warto również zaznaczyć, że z matematycznego sensu te dwie funkcje są  sobie równe. Należało policzyć to w precyzji Float64.
+Funkcja \(f(x)\) jest równa 0.0 dla \(x = 8^{-9}\), natomiast funkcja \(g(x)\) jest równa 0.0 dla \(x = 8^{-179}\). Wynika z tego, że wyniki funkcji \(g(x)\) są dużo bardziej wiarygodne. Funkcja ta nigdy dla argumentów większych od 0 nie powinna osiągać wartości 0.0. Taka rozbieżność wyników wynika z tego, że korzystając z funkcji \(f(x)\) odejmujemy od siebie bardzo bliskie liczby przez co otrzymujemy duży błąd podczas obliczeń. W sytuacji użycia funkcji \(g(x)\) usuwamy ten problem. Przekształcając funkcje aby uniknąć odejmowania bliskich sobie liczb pozwala zwiększyć wiarygodność wyników, oraz zmniejszyć błędy podczas obliczeń.
+\section*{Zadanie 7}
+W zadaniu mamy policzyć przybliżoną wartość pochodnej w punkcie $x_0=1$. Zostaje nam do tego zadania dostarczony wzór:
+\[f'=\frac{f(x_0+h)-f(x_0)}{h}\]
+gdzie $h=2^{-n}$ ($n=0,1,2,...,54$). Poniżej przedstawiam wyniki na wykresie:
+\begin{center}
+\begin{tikzpicture}
+    \begin{axis}[
+        xlabel={$n$},
+        ylabel={Wartość przybliżonej pochodnej w punkcie x_0=1},
+        grid=major,
+        width=14cm,
+        height=8cm,
+        legend pos=north east,
+        yticklabel style={
+            /pgf/number format/fixed,
+            /pgf/number format/precision=6
+        }
+    ]
+    
+    % Dane do wykresu
+    \addplot[blue, thick] coordinates {
+        (1, 1.8704413979316472)
+        (2, 1.1077870952342974)
+        (3, 0.6232412792975817)
+        (4, 0.3704000662035192)
+        (5, 0.24344307439754687)
+        (6, 0.18009756330732785)
+        (7, 0.1484913953710958)
+        (8, 0.1327091142805159)
+        (9, 0.1248236929407085)
+        (10, 0.12088247681106168)
+        (11, 0.11891225046883847)
+        (12, 0.11792723373901026)
+        (13, 0.11743474961076572)
+        (14, 0.11718851362093119)
+        (15, 0.11706539714577957)
+        (16, 0.11700383928837255)
+        (17, 0.11697306045971345)
+        (18, 0.11695767106721178)
+        (19, 0.11694997636368498)
+        (20, 0.11694612901192158)
+        (21, 0.1169442052487284)
+        (22, 0.11694324295967817)
+        (23, 0.11694276239722967)
+        (24, 0.11694252118468285)
+        (25, 0.116942398250103)
+        (26, 0.11694233864545822)
+        (27, 0.11694231629371643)
+        (28, 0.11694228649139404)
+        (29, 0.11694222688674927)
+        (30, 0.11694216728210449)
+        (31, 0.11694216728210449)
+        (32, 0.11694192886352539)
+        (33, 0.11694145202636719)
+        (34, 0.11694145202636719)
+        (35, 0.11693954467773438)
+        (36, 0.116943359375)
+        (37, 0.1169281005859375)
+        (38, 0.116943359375)
+        (39, 0.11688232421875)
+        (40, 0.1168212890625)
+        (41, 0.116943359375)
+        (42, 0.11669921875)
+        (43, 0.1162109375)
+        (44, 0.1171875)
+        (45, 0.11328125)
+        (46, 0.109375)
+        (47, 0.109375)
+        (48, 0.09375)
+        (49, 0.125)
+        (50, 0.0)
+        (51, 0.0)
+        (52, -0.5)
+        (53, 0.0)
+        (54, 0.0)
+    };
+    \end{axis}
+\end{tikzpicture}
+\end{center}
+ Dodatkowo przedstawiam wyniki pomiaru błędu względem prawidłowej wartości pochodnej tej funkcji: 
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[yshift=-1cm] % przesunięcie wykresu o 1 cm w dół
+        \begin{semilogyaxis}[
+            width=12cm, % szerokość wykresu
+            height=8cm, % wysokość wykresu
+            xlabel={$n$}, % etykieta osi X
+            ylabel={Błąd}, % etykieta osi Y
+            title={Błąd w zależności od $n$}, % tytuł wykresu
+            grid=both, % włączenie siatki
+            ymin=1e-12, % minimalna wartość na osi Y
+            ymax=40, % maksymalna wartość na osi Y
+            legend pos=north west,
+        ]
+        % Dane: (n, błąd)
+        \addplot coordinates {
+            (1, 1.753499116243109)
+            (2, 0.9908448135457593)
+            (3, 0.5062989976090435)
+            (4, 0.253457784514981)
+            (5, 0.1265007927090087)
+            (6, 0.0631552816187897)
+            (7, 0.03154911368255764)
+            (8, 0.015766832591977753)
+            (9, 0.007881411252170345)
+            (10, 0.0039401951225235265)
+            (11, 0.001969968780300313)
+            (12, 0.0009849520504721099)
+            (13, 0.0004924679222275685)
+            (14, 0.0002462319323930373)
+            (15, 0.00012311545724141837)
+            (16, 6.155759983439424e-5)
+            (17, 3.077877117529937e-5)
+            (18, 1.5389378673624776e-5)
+            (19, 7.694675146829866e-6)
+            (20, 3.8473233834324105e-6)
+            (21, 1.9235601902423127e-6)
+            (22, 9.612711400208696e-7)
+            (23, 4.807086915192826e-7)
+            (24, 2.394961446938737e-7)
+            (25, 1.1656156484463054e-7)
+            (26, 5.6956920069239914e-8)
+            (27, 3.460517827846843e-8)
+            (28, 4.802855890773117e-9)
+            (29, 5.480178888461751e-8)
+            (30, 1.1440643366000813e-7)
+            (31, 1.1440643366000813e-7)
+            (32, 3.5282501276157063e-7)
+            (33, 8.296621709646956e-7)
+            (34, 8.296621709646956e-7)
+            (35, 2.7370108037771956e-6)
+            (36, 1.0776864618478044e-6)
+            (37, 1.4181102600652196e-5)
+            (38, 1.0776864618478044e-6)
+            (39, 5.9957469788152196e-5)
+            (40, 0.0001209926260381522)
+            (41, 1.0776864618478044e-6)
+            (42, 0.0002430629385381522)
+            (43, 0.0007313441885381522)
+            (44, 0.0002452183114618478)
+            (45, 0.003661031688538152)
+            (46, 0.007567281688538152)
+            (47, 0.007567281688538152)
+            (48, 0.023192281688538152)
+            (49, 0.008057718311461848)
+            (50, 0.11694228168853815)
+            (51, 0.11694228168853815)
+            (52, 0.6169422816885382)
+            (53, 0.11694228168853815)
+            (54, 0.11694228168853815)
+        };
+        \addlegendentry{Błąd }
+        \end{semilogyaxis}
+    \end{tikzpicture}
+    \caption{Wykres błędu w zależności od liczby iteracji $n$.}
+    \label{fig:blad_vs_n}
+\end{figure}
+
+Możemy zaobserwować, że najbliższe przybliżenie mamy dla wartości $n=28$. Dalsze zmniejszanie $h$ powoduje wzrost błędu. Wynika to z arytmetyki Float64 oraz odejmowania pojawiającego się w tym wzorze. Dodatkowo, po bliższym przyjrzeniu się wartościom $h+1$ widzimy, że dla $n=53$ $h+1=1$. Przez ograniczenia arytmetyki w pewnym momencie zaczynamy podczas odejmowania ucinać coraz to większe fragmenty $h$ przez co tracimy na dokładności przybliżenia. Wniosek wynikający z tego zadania jest taki, że mimo, iż zmniejszamy coraz bardzie $h$ to w pewnym momencie zaczynamy się oddalać od prawdziwej wartości. Wydawałoby się ze zmniejszanie tak $h$ może nas przybliżać jednak przez ograniecznia arytmetyki ucinamy część mantysy $h$ co oddala nas od wyników prawidłowych.
+\end{document}
