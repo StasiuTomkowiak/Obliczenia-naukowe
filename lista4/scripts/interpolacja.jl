@@ -57,6 +57,6 @@ function rysujNnfx(f,a::Float64,b::Float64,n::Int)
     plot(xstep, ystep_real, label="f(x) (dokładna)")
     plot!(xstep, ystep_inter, label="Wielomian interpolacyjny", lw=2, linestyle=:dash, color=:red)
     scatter!(xnodes, nodes, label="Węzły interpolacyjne",color=:black, marker=:circle, ms=4)
-    savefig("plot_$n.pdf")
+    savefig("z6_2_$n.pdf")
 end
 end
