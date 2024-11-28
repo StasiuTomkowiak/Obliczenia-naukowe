@@ -2,8 +2,9 @@
 #272345
 module Interpolacja
 
+using Plots
 
-export ilorazyRoznicowe,warNewton,naturalna
+export ilorazyRoznicowe,warNewton,naturalna,rysujNnfx
 
 function ilorazyRoznicowe(x::Vector{Float64}, f::Vector{Float64})
 
@@ -40,5 +41,22 @@ function naturalna(x::Vector{Float64}, fx::Vector{Float64})
     end   
     return a  # Zwróć współczynniki postaci naturalnej
 end
+function rysujNnfx(f,a::Float64,b::Float64,n::Int)
+      
+    step = (b - a) / n
+    xnodes = [a + i * step for i in 0:n]
+    ynodes = f.(xnodes)
+    coefnodes = ilorazyRoznicowe(xnodes, ynodes)
+    nodes = [warNewton( xnodes,coefnodes, x) for x in xnodes]  
 
+    step = (b-a)/500
+    xstep= [a + i * step for i in 0:500]
+    ystep_real = f.(xstep)  
+    ystep_inter = [warNewton( xnodes,coefnodes, x) for x in xstep]
+
+    plot(xstep, ystep_real, label="f(x) (dokładna)")
+    plot!(xstep, ystep_inter, label="Wielomian interpolacyjny", lw=2, linestyle=:dash, color=:red)
+    scatter!(xnodes, nodes, label="Węzły interpolacyjne",color=:black, marker=:circle, ms=4)
+    savefig("plot_$n.pdf")
+end
 end

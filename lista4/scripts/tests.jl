@@ -24,3 +24,4 @@ println(naturalna([1.0, 2.0, 3.0], [1.0, 4.0, 9.0]))
 println(naturalna([3.0, 1.0, 5.0], [1.0, -3.0, 2.0]))
 
 
+rysujNnfx(x -> cos(x), 0.0, 10.0, 20)
