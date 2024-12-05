@@ -39,7 +39,7 @@ function naturalna(x::Vector{Float64}, fx::Vector{Float64})
             a[j] = a[j] - a[j+1]*x[i]
         end
     end   
-    return a  # Zwróć współczynniki postaci naturalnej
+    return a  
 end
 function rysujNnfx(f,a::Float64,b::Float64,n::Int)
       
