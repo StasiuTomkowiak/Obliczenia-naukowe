@@ -11,7 +11,6 @@ function main()
     filenameB = readline()
 
     try
-        # Wczytanie macierzy A i wektora b
         matrixA = readA(filenameA)
         #vectorB = getB(matrixA,4)
         vectorB = readB(filenameB)
@@ -22,8 +21,10 @@ function main()
         println("Wektor b wczytany z pliku:")
 
         println("Wybierz metodę eliminacji:")
-        println("1 - Zwykła eliminacja Gaussa")
+        println("1 - Gaussa")
         println("2 - Eliminacja Gaussa z częściowym pivotingiem")
+        println("3 - Zwykła eliminacja LU")
+        println("4 - Eliminacja LU z częściowym pivotingiem")
         method = parse(Int, readline())
 
         if method == 1
@@ -33,7 +34,15 @@ function main()
             #solution = partialGaussianElimination(matrixA, vectorB,4)
             elapsed_time = @elapsed solution = partialGaussianElimination(matrixA, vectorB, 4)
             println("Rozwiązanie układu Ax = b (z częściowym pivotingiem):")
-        else
+        elseif method == 3 
+            LU=calculateLU(matrixA,4)
+            elapsed_time = @elapsed solution = solveLU(LU, vectorB,4)
+            println("Rozwiązanie układu Ax = b (zwykła eliminacja LU):")
+        elseif method == 4 
+            elapsed_time= @elapsed LU, pivot=partialCalculateLU(matrixA,4)
+            elapsed_time += @elapsed solution = partialSolveLU(LU, vectorB,pivot,4)
+            println("Rozwiązanie układu Ax = b (Eliminacja LU z częściowym pivotingiem):")
+        else 
             println("Niepoprawny wybór metody.")
             return
         end

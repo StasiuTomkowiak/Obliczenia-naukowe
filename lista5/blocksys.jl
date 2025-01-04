@@ -5,7 +5,7 @@ module blocksys
 using LinearAlgebra
 using SparseArrays
 
-export readA, readB, gaussianElimination, partialGaussianElimination,calculateLU, LUSolve, partialcalculateLU, writeX, writeXError, errorRelative, getB
+export readA, readB, gaussianElimination, partialGaussianElimination, calculateLU, solveLU, partialCalculateLU,partialSolveLU, writeX, writeXError, errorRelative, getB
 
 
 function gaussianElimination(A::SparseMatrixCSC, b::Vector{Float64},l)::Vector{Float64}
@@ -20,11 +20,11 @@ function gaussianElimination(A::SparseMatrixCSC, b::Vector{Float64},l)::Vector{F
             if A[k, k] == 0
                 throw(ErrorException("Dzielenie przez zero w eliminacji Gaussa"))
             end
-            factor = A[i, k] / A[k, k]
+            I_ik = A[i, k] / A[k, k]
             for j in k+1:min(n, k + l+1)
-                A[i, j] -= factor * A[k, j]
+                A[i, j] -= I_ik * A[k, j]
             end
-            b[i] -= factor * b[k]
+            b[i] -= I_ik * b[k]
         end
     end
 
@@ -66,11 +66,11 @@ function partialGaussianElimination(A::SparseMatrixCSC, b::Vector{Float64},l)::V
             if A[k, k] == 0
                 throw(ErrorException("Dzielenie przez zero w eliminacji Gaussa"))
             end
-            factor = A[i, k] / A[k, k]
+            I_ik = A[i, k] / A[k, k]
             for j in k+1:min(n, k + 2* l)
-                A[i, j] -= factor * A[k, j]
+                A[i, j] -= I_ik * A[k, j]
             end
-            b[i] -= factor * b[k]
+            b[i] -= I_ik * b[k]
         end
     end
 
@@ -88,6 +88,118 @@ function partialGaussianElimination(A::SparseMatrixCSC, b::Vector{Float64},l)::V
 
     return x
 end
+
+function calculateLU(A::SparseMatrixCSC, l::Int)::SparseMatrixCSC
+    n = size(A, 1)
+    A = deepcopy(A)
+
+    for k in 1:n-1
+        if A[k, k] == 0
+            throw(ErrorException("Dzielenie przez zero w eliminacji Gaussa"))
+        end
+
+        for i in k+1:min(n, k + l + 1)
+            I_ik = A[i, k] / A[k, k]
+            for j in k+1:min(n, k + 2 * l)
+                A[i, j] -= I_ik * A[k, j]
+            end
+            A[i, k] = I_ik 
+        end
+    end
+
+    return A
+end
+
+function solveLU(A::SparseMatrixCSC, b::Vector{Float64}, l::Int)::Vector{Float64}
+    n = size(A, 1)
+
+    # Forward substitution (Ly = b)
+    for k in 1:n-1
+        for i in k+1:min(n, k + l + 1)
+            b[i] -= A[i, k] * b[k]
+        end
+    end
+
+    # Backward substitution (Ux = y)
+    x = zeros(Float64, n)
+    for k in n:-1:1
+        sum = Float64(0.0)
+        for j in k+1:min(n, k + l)
+            sum += A[k, j] * x[j]
+        end
+        if A[k, k] == 0
+            throw(ErrorException("Dzielenie przez zero w trakcie podstawiania wstecz"))
+        end
+        x[k] = (b[k] - sum) / A[k, k]
+    end
+
+    return x
+end
+
+function partialCalculateLU(A::SparseMatrixCSC, l::Int)::Tuple{SparseMatrixCSC, Vector{Int}}
+    n = size(A, 1)
+    A = deepcopy(A)
+    pivot = collect(1:n)
+    A = deepcopy(A)
+
+    for k in 1:n-1
+        pivot_row = argmax(abs.(A[k:n, k])) + k - 1
+        if A[pivot_row, k] == 0
+            throw(ErrorException("Układ jest osobliwy lub nie ma jednoznacznego rozwiązania"))
+        end
+
+        if pivot_row != k
+            A[k, :], A[pivot_row, :] = A[pivot_row, :], A[k, :]
+            pivot[k], pivot[pivot_row] = pivot[pivot_row], pivot[k]
+        end
+
+        for i in k+1:min(n, k + l + 1)
+            if A[k, k] == 0
+                throw(ErrorException("Dzielenie przez zero w eliminacji Gaussa"))
+            end
+            I_ik = A[i, k] / A[k, k]
+            for j in k+1:min(n, k + 2* l)
+                A[i, j] -= I_ik * A[k, j]
+            end
+            A[i, k] = I_ik 
+        end
+    end
+    
+
+    return A, pivot
+end
+
+function partialSolveLU(A::SparseMatrixCSC, bo::Vector{Float64}, pivot::Vector{Int}, l::Int)::Vector{Float64}
+    n = size(A, 1)
+    x = zeros(Float64, n)
+
+    b = zeros(Float64, n)
+        for i = 1:n
+            b[i] = bo[pivot[i]]
+        end
+    # Forward substitution (Ly = b)
+    for k in 1:n-1
+        for i in k+1:min(n, k + l + 1)
+            b[i] -= A[i, k] * b[k]
+        end
+    end
+
+    # Backward substitution (Ux = y)
+    x = zeros(Float64, n)
+    for k in n:-1:1
+        sum = Float64(0.0)
+        for j in k+1:min(n, k + 2*l)
+            sum += A[k, j] * x[j]
+        end
+        if A[k, k] == 0
+            throw(ErrorException("Dzielenie przez zero w trakcie podstawiania wstecz"))
+        end
+        x[k] = (b[k] - sum) / A[k, k]
+    end
+
+    return x
+end
+
 
 function readA(filename::String)
 

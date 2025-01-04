@@ -1,0 +1,4 @@
+gaussianElimination: 0.383936562 seconds
+partialGaussianElimination: 5.068604812 seconds
+calculateLU + solveLU: 0.365990599 seconds
+partialCalculateLU + partialSolveLU: 5.193914486 seconds
