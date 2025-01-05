@@ -1,0 +1,4 @@
+gaussianElimination: 16144 bytes
+partialGaussianElimination: 78960 bytes
+calculateLU + solveLU: 16144 bytes
+partialCalculateLU + partialSolveLU: 82752 bytes

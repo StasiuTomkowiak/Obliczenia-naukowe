@@ -34,10 +34,11 @@ function test_blocksys_functions()
             ]
             
             execution_times = []
+            memory_usages = []
 
             for (name, func) in functions
                 try
-                    elapsed_time = @elapsed solution = if typeof(func) <: Function
+                    elapsed_time = @elapsed memory_alloc = @allocated solution = if typeof(func) <: Function
                         func(A, b, l)
                     else
                         func(A, deepcopy(b), l)
@@ -49,6 +50,7 @@ function test_blocksys_functions()
                     writeXError(output_file, solution, error)
 
                     push!(execution_times, (name, elapsed_time))
+                    push!(memory_usages, (name, memory_alloc))
                     
                     println("Test for $name in $folder passed. Results written to $output_file.")
                 catch e
@@ -63,6 +65,14 @@ function test_blocksys_functions()
                 end
             end
             println("Execution times written to $exec_time_file.")
+
+            memory_usage_file = joinpath(folder, "memory_usage.txt")
+            open(memory_usage_file, "w") do io
+                for (func_name, memory) in memory_usages
+                    println(io, "$func_name: $memory bytes")
+                end
+            end
+            println("Memory usage written to $memory_usage_file.")
         end
     end
 end
